@@ -26,6 +26,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <spring-boot.version>3.2.0</spring-boot.version>
         <spring-cloud.version>2022.0.4</spring-cloud.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
     <dependencyManagement>
@@ -43,6 +44,11 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

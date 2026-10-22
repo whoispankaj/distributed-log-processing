@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "log_events")
+@Table(name = "log_events", indexes = {
+        @Index(name = "idx_log_events_organization_timestamp", columnList = "organization_id, timestamp")
+})
 public class LogEvent {
     
     @Id

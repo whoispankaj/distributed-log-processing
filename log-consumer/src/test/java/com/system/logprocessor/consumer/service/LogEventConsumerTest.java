@@ -9,8 +9,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,7 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @EmbeddedKafka(
-        partitions = 1,
+        partitions = 3,
         topics = {"log-events", "log-events.DLT"},
         bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @Testcontainers
@@ -115,16 +117,23 @@ class LogEventConsumerTest {
     @Test
     void sendsAMalformedLogEventToTheDeadLetterTopic() throws Exception {
         String payload = "not-json-" + UUID.randomUUID();
+        int partition = 2;
 
-        kafkaTemplate.send(topic, "bad", payload).get(10, TimeUnit.SECONDS);
+        kafkaTemplate.send(new ProducerRecord<>(topic, partition, "bad", payload)).get(10, TimeUnit.SECONDS);
 
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
-            assertThat(deadLetterValues()).contains(payload);
+            assertThat(deadLetterRecords())
+                    .filteredOn(record -> payload.equals(record.value()))
+                    .anySatisfy(record -> assertThat(record.partition()).isEqualTo(partition));
             assertThat(repository.count()).isZero();
         });
     }
 
     private List<String> deadLetterValues() {
+        return deadLetterRecords().stream().map(ConsumerRecord::value).toList();
+    }
+
+    private List<ConsumerRecord<String, String>> deadLetterRecords() {
         Map<String, Object> properties = KafkaTestUtils.consumerProps("dlt-reader-" + UUID.randomUUID(), "true", broker);
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -132,8 +141,8 @@ class LogEventConsumerTest {
         try (Consumer<String, String> consumer = new KafkaConsumer<>(properties)) {
             consumer.subscribe(List.of(topic + ".DLT"));
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
-            List<String> values = new ArrayList<>();
-            records.records(topic + ".DLT").forEach(record -> values.add(record.value()));
+            List<ConsumerRecord<String, String>> values = new ArrayList<>();
+            records.records(topic + ".DLT").forEach(values::add);
             return values;
         }
     }

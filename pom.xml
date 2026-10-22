@@ -7,7 +7,7 @@
     <packaging>pom</packaging>
     <name>Distributed Log Processor</name>
     <description>A distributed log processor</description>
-    <url>https://github.com/systems/distributed-log-processor</url>
+    <url>https://github.com/whoispankaj/distributed-log-processing</url>
     <licenses>
         <license>
             <name>Apache License 2.0</name>

@@ -77,6 +77,9 @@ public class LogEventConsumer {
         if (isBlank(logEvent.getLevel())) {
             missing.add("level");
         }
+        if (isBlank(logEvent.getMessage())) {
+            missing.add("message");
+        }
         if (logEvent.getTimestamp() == null) {
             missing.add("timestamp");
         }

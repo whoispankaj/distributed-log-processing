@@ -88,6 +88,21 @@ class LogEventConsumerTest {
     }
 
     @Test
+    void sendsALogEventWithoutAMessageToTheDeadLetterTopic() throws Exception {
+        String id = "evt-" + UUID.randomUUID();
+        String payload = """
+                {"id":"%s","organizationId":"org-1","level":"INFO","timestamp":"2026-10-22T04:00:00Z"}
+                """.formatted(id).strip();
+
+        kafkaTemplate.send(topic, "org-1", payload).get(10, TimeUnit.SECONDS);
+
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+            assertThat(deadLetterValues()).contains(payload);
+            assertThat(repository.findById(id)).isEmpty();
+        });
+    }
+
+    @Test
     void sendsANullLogEventToTheDeadLetterTopic() throws Exception {
         kafkaTemplate.send(topic, "null-event", "null").get(10, TimeUnit.SECONDS);
 

@@ -18,7 +18,7 @@ public class LogEvent {
     @Column(name = "level", nullable = false)
     private String level;
     
-    @Column(name = "message", columnDefinition = "TEXT")
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
     
     @Column(name = "source")

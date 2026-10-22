@@ -1,5 +1,8 @@
 package com.system.logprocessor.producer.web;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -21,6 +24,9 @@ import com.system.logprocessor.producer.model.LogEvent;
 @RestController
 @RequestMapping("/logs")
 public class LogEventController {
+
+    static final int MAX_LENGTH = 255;
+    static final Set<String> LEVELS = Set.of("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL");
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -44,10 +50,37 @@ public class LogEventController {
     }
 
     private void validate(LogEventRequest request) {
-        if (isBlank(request.organizationId()) || isBlank(request.level()) || isBlank(request.message())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "organizationId, level, and message are required");
+        List<String> problems = new ArrayList<>();
+        checkRequired(problems, "organizationId", request.organizationId());
+        checkLevel(problems, request.level());
+        checkRequired(problems, "message", request.message());
+        checkLength(problems, "source", request.source());
+        if (!problems.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join("; ", problems));
+        }
+    }
+
+    private static void checkRequired(List<String> problems, String name, String value) {
+        if (isBlank(value)) {
+            problems.add(name + " is required");
+        } else {
+            checkLength(problems, name, value);
+        }
+    }
+
+    private static void checkLevel(List<String> problems, String level) {
+        if (isBlank(level)) {
+            problems.add("level is required");
+        } else if (!LEVELS.contains(level)) {
+            problems.add("level must be one of TRACE, DEBUG, INFO, WARN, ERROR, FATAL");
+        } else {
+            checkLength(problems, "level", level);
+        }
+    }
+
+    private static void checkLength(List<String> problems, String name, String value) {
+        if (value != null && value.length() > MAX_LENGTH) {
+            problems.add(name + " must be at most " + MAX_LENGTH + " characters");
         }
     }
 

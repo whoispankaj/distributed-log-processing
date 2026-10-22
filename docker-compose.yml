@@ -47,7 +47,7 @@ services:
     restart: "no"
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic log-events --partitions 3 --replication-factor 1
+      - kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic log-events --partitions 3 --replication-factor 1 && kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic log-events.DLT --partitions 3 --replication-factor 1
 
   # Redis
   redis:

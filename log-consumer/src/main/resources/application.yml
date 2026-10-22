@@ -36,6 +36,8 @@ log:
   events:
     topic: log-events
     group-id: log-consumer-group
+    partitions: 3
+    replicas: 1
 
 # Actuator endpoints
 management:

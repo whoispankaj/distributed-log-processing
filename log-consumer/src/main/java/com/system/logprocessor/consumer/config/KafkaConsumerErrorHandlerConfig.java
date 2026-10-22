@@ -1,16 +1,23 @@
 package com.system.logprocessor.consumer.config;
 
+import java.sql.SQLException;
+
+import org.hibernate.exception.JDBCConnectionException;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.util.backoff.ExponentialBackOff;
+import org.springframework.util.backoff.FixedBackOff;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.system.logprocessor.consumer.service.InvalidLogEventException;
@@ -42,10 +49,42 @@ public class KafkaConsumerErrorHandlerConfig {
         backOff.setMaxElapsedTime(30_000L);
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
+        errorHandler.setBackOffFunction((record, exception) -> isTransient(exception)
+                ? new FixedBackOff(5_000L, FixedBackOff.UNLIMITED_ATTEMPTS)
+                : null);
         errorHandler.addNotRetryableExceptions(
                 JsonProcessingException.class,
                 InvalidLogEventException.class,
                 DataIntegrityViolationException.class);
         return errorHandler;
+    }
+
+    private static boolean isTransient(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof TransientDataAccessException
+                    || current instanceof DataAccessResourceFailureException
+                    || current instanceof CannotCreateTransactionException
+                    || current instanceof JDBCConnectionException
+                    || isConnectionFailure(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static boolean isConnectionFailure(Throwable exception) {
+        if (!(exception instanceof SQLException sql)) {
+            return false;
+        }
+        String state = sql.getSQLState();
+        if (state != null && (state.startsWith("08") || "57P01".equals(state))) {
+            return true;
+        }
+        String message = sql.getMessage();
+        return message != null && (message.contains("Connection is closed")
+                || message.contains("Connection refused")
+                || message.contains("terminating connection"));
     }
 }

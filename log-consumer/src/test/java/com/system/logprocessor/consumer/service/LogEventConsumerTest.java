@@ -23,6 +23,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.testcontainers.DockerClientFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -53,6 +54,7 @@ class LogEventConsumerTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("POSTGRES_USER", POSTGRES::getUsername);
         registry.add("POSTGRES_PASSWORD", POSTGRES::getPassword);
+        registry.add("spring.datasource.hikari.connection-timeout", () -> "1000");
     }
 
     @Autowired
@@ -87,6 +89,34 @@ class LogEventConsumerTest {
         assertThat(saved.getLevel()).isEqualTo("INFO");
         assertThat(saved.getMessage()).isEqualTo("hello");
         assertThat(saved.getProcessedAt()).isNotNull();
+    }
+
+    @Test
+    void storesAValidEventAfterPostgresRecovers() throws Exception {
+        String id = "evt-" + UUID.randomUUID();
+        String payload = """
+                {"id":"%s","organizationId":"org-1","level":"INFO","message":"hello","source":"test","timestamp":"2026-10-22T04:00:00Z"}
+                """.formatted(id).strip();
+
+        var docker = DockerClientFactory.instance().client();
+        docker.pauseContainerCmd(POSTGRES.getContainerId()).exec();
+        try {
+            kafkaTemplate.send(topic, "org-1", payload).get(10, TimeUnit.SECONDS);
+            Thread.sleep(Duration.ofSeconds(40));
+            assertThat(deadLetterValues()).doesNotContain(payload);
+
+            docker.unpauseContainerCmd(POSTGRES.getContainerId()).exec();
+            await().atMost(Duration.ofSeconds(40)).ignoreExceptions().until(
+                    () -> repository.findById(id).isPresent());
+            assertThat(repository.findById(id).orElseThrow().getMessage()).isEqualTo("hello");
+            assertThat(deadLetterValues()).doesNotContain(payload);
+        } finally {
+            try {
+                docker.unpauseContainerCmd(POSTGRES.getContainerId()).exec();
+            } catch (RuntimeException ignored) {
+                // The container is already running.
+            }
+        }
     }
 
     @Test

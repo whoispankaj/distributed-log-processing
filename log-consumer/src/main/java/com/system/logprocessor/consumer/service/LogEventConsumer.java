@@ -32,7 +32,7 @@ public class LogEventConsumer {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    @KafkaListener(topics = "log-events", groupId = "log-consumer-group")
+    @KafkaListener(topics = "${log.events.topic}", groupId = "${log.events.group-id}")
     public void consumeLogEvent(String message, Acknowledgment acknowledgment) {
         LogEvent logEvent = readLogEvent(message);
         validate(logEvent);

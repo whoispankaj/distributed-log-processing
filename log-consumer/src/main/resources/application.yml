@@ -9,7 +9,7 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: log-consumer-group
+      group-id: ${log.events.group-id}
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -31,6 +31,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+
+log:
+  events:
+    topic: log-events
+    group-id: log-consumer-group
 
 # Actuator endpoints
 management:

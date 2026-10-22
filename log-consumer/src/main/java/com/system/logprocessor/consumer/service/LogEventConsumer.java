@@ -2,6 +2,7 @@ package com.system.logprocessor.consumer.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 import com.system.logprocessor.consumer.model.LogEvent;
@@ -20,11 +21,12 @@ public class LogEventConsumer {
     private ObjectMapper objectMapper;
 
     @KafkaListener(topics = "log-events", groupId = "log-consumer-group")
-    public void consumeLogEvent(String message) {
+    public void consumeLogEvent(String message, Acknowledgment acknowledgment) {
         try {
             LogEvent logEvent = objectMapper.readValue(message, LogEvent.class);
             logEvent.setProcessedAt(LocalDateTime.now());
             logEventRepository.save(logEvent);
+            acknowledgment.acknowledge();
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

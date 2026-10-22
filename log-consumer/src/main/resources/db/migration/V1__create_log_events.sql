@@ -2,7 +2,7 @@ CREATE TABLE log_events (
     id VARCHAR(255) PRIMARY KEY,
     organization_id VARCHAR(255) NOT NULL,
     level VARCHAR(255) NOT NULL,
-    message TEXT,
+    message TEXT NOT NULL,
     source VARCHAR(255),
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     processed_at TIMESTAMP WITH TIME ZONE

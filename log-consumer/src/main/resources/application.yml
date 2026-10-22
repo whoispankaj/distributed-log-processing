@@ -64,7 +64,7 @@ management:
 # Logging configuration
 logging:
   level:
-    com.example.logprocessor: DEBUG
+    com.system.logprocessor: DEBUG
     org.springframework.kafka: INFO
     org.hibernate.SQL: INFO
   pattern:

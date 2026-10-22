@@ -101,7 +101,7 @@ public class LogEventController {
             String payload = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(topic, event.getOrganizationId(), payload).get(10, TimeUnit.SECONDS);
         } catch (JsonProcessingException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Log event could not be serialized", exception);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Log event could not be serialized", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Interrupted while publishing log event", exception);

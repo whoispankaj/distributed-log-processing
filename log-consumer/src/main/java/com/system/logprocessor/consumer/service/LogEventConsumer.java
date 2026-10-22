@@ -49,7 +49,8 @@ public class LogEventConsumer {
                 logEvent.getTimestamp(),
                 logEvent.getProcessedAt());
         if (inserted == 0) {
-            log.info("Skipped already stored log event id={}", logEvent.getId());
+            log.info("Skipped already stored log event organizationId={} id={}",
+                    logEvent.getOrganizationId(), logEvent.getId());
         }
         acknowledgment.acknowledge();
     }

@@ -10,16 +10,17 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.system.logprocessor.consumer.model.LogEvent;
+import com.system.logprocessor.consumer.model.LogEventId;
 
 @Repository
-public interface LogEventRepository extends JpaRepository<LogEvent, String> {
+public interface LogEventRepository extends JpaRepository<LogEvent, LogEventId> {
 
     @Modifying
     @Transactional
     @Query(value = """
             INSERT INTO log_events (id, organization_id, level, message, source, timestamp, processed_at)
             VALUES (:id, :organizationId, :level, :message, :source, :timestamp, :processedAt)
-            ON CONFLICT (id) DO NOTHING
+            ON CONFLICT (organization_id, id) DO NOTHING
             """, nativeQuery = true)
     int insertIfAbsent(
             @Param("id") String id,

@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +34,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.system.logprocessor.consumer.model.LogEvent;
+import com.system.logprocessor.consumer.model.LogEventId;
 import com.system.logprocessor.consumer.repository.LogEventRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,7 +88,7 @@ class LogEventConsumerTest {
         kafkaTemplate.send(topic, "org-1", payload).get(10, TimeUnit.SECONDS);
 
         LogEvent saved = await().atMost(Duration.ofSeconds(20))
-                .until(() -> repository.findById(id).orElse(null), event -> event != null);
+                .until(() -> stored(id, "org-1").orElse(null), event -> event != null);
         assertThat(saved.getOrganizationId()).isEqualTo("org-1");
         assertThat(saved.getLevel()).isEqualTo("INFO");
         assertThat(saved.getMessage()).isEqualTo("hello");
@@ -109,8 +111,8 @@ class LogEventConsumerTest {
 
             docker.unpauseContainerCmd(POSTGRES.getContainerId()).exec();
             await().atMost(Duration.ofSeconds(40)).ignoreExceptions().until(
-                    () -> repository.findById(id).isPresent());
-            assertThat(repository.findById(id).orElseThrow().getMessage()).isEqualTo("hello");
+                    () -> stored(id, "org-1").isPresent());
+            assertThat(stored(id, "org-1").orElseThrow().getMessage()).isEqualTo("hello");
             assertThat(deadLetterValues()).doesNotContain(payload);
         } finally {
             try {
@@ -132,7 +134,7 @@ class LogEventConsumerTest {
 
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
             assertThat(deadLetterValues()).contains(payload);
-            assertThat(repository.findById(id)).isEmpty();
+            assertThat(stored(id, "org-1")).isEmpty();
         });
     }
 
@@ -157,7 +159,27 @@ class LogEventConsumerTest {
 
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
             assertThat(deadLetterValues()).contains(payload);
-            assertThat(repository.findById(id)).isEmpty();
+            assertThat(stored(id, "x".repeat(256))).isEmpty();
+        });
+    }
+
+    @Test
+    void storesTheSameIdForEachOrganization() throws Exception {
+        String id = "evt-1";
+        String first = """
+                {"id":"%s","organizationId":"org-1","level":"INFO","message":"from-org-1","source":"test","timestamp":"2026-10-22T04:00:00Z"}
+                """.formatted(id);
+        String second = """
+                {"id":"%s","organizationId":"org-2","level":"INFO","message":"from-org-2","source":"test","timestamp":"2026-10-22T04:00:00Z"}
+                """.formatted(id);
+
+        kafkaTemplate.send(topic, "org-1", first).get(10, TimeUnit.SECONDS);
+        kafkaTemplate.send(topic, "org-2", second).get(10, TimeUnit.SECONDS);
+
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+            assertThat(stored(id, "org-1").orElseThrow().getMessage()).isEqualTo("from-org-1");
+            assertThat(stored(id, "org-2").orElseThrow().getMessage()).isEqualTo("from-org-2");
+            assertThat(repository.count()).isEqualTo(2);
         });
     }
 
@@ -174,6 +196,10 @@ class LogEventConsumerTest {
                     .anySatisfy(record -> assertThat(record.partition()).isEqualTo(partition));
             assertThat(repository.count()).isZero();
         });
+    }
+
+    private Optional<LogEvent> stored(String id, String organizationId) {
+        return repository.findById(new LogEventId(id, organizationId));
     }
 
     private List<String> deadLetterValues() {

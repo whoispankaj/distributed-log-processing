@@ -79,19 +79,9 @@ class LogEventControllerTest {
         mockMvc.perform(post("/logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"id":"11111111-1111-4111-8111-111111111111","organizationId":"org-1","level":"INFO","message":"hello"}
-                                """))
-                .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.id").value("11111111-1111-4111-8111-111111111111"));
-    }
-
-    @Test
-    void rejectsAClientIdThatIsNotAUuid() throws Exception {
-        mockMvc.perform(post("/logs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
                                 {"id":"evt-1","organizationId":"org-1","level":"INFO","message":"hello"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value("evt-1"));
     }
 }

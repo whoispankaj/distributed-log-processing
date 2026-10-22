@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -54,24 +53,13 @@ public class LogEventController {
 
     private void validate(LogEventRequest request) {
         List<String> problems = new ArrayList<>();
-        checkId(problems, request.id());
+        checkLength(problems, "id", request.id());
         checkRequired(problems, "organizationId", request.organizationId());
         checkLevel(problems, request.level());
         checkRequired(problems, "message", request.message());
         checkLength(problems, "source", request.source());
         if (!problems.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join("; ", problems));
-        }
-    }
-
-    private static void checkId(List<String> problems, String id) {
-        if (isBlank(id)) {
-            return;
-        }
-        try {
-            UUID.fromString(id);
-        } catch (IllegalArgumentException exception) {
-            problems.add("id must be a UUID");
         }
     }
 
@@ -105,7 +93,7 @@ public class LogEventController {
     private LogEvent toEvent(LogEventRequest request) {
         LogEvent event = new LogEvent();
         if (!isBlank(request.id())) {
-            event.setId(UUID.fromString(request.id()).toString());
+            event.setId(request.id());
         }
         event.setOrganizationId(request.organizationId());
         event.setLevel(normalizeLevel(request.level()));

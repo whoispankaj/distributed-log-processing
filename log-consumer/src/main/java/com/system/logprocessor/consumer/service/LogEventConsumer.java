@@ -37,7 +37,17 @@ public class LogEventConsumer {
         LogEvent logEvent = readLogEvent(message);
         validate(logEvent);
         logEvent.setProcessedAt(LocalDateTime.now());
-        logEventRepository.save(logEvent);
+        int inserted = logEventRepository.insertIfAbsent(
+                logEvent.getId(),
+                logEvent.getOrganizationId(),
+                logEvent.getLevel(),
+                logEvent.getMessage(),
+                logEvent.getSource(),
+                logEvent.getTimestamp(),
+                logEvent.getProcessedAt());
+        if (inserted == 0) {
+            log.info("Skipped already stored log event id={}", logEvent.getId());
+        }
         acknowledgment.acknowledge();
     }
 

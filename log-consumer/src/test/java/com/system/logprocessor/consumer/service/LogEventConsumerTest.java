@@ -88,6 +88,16 @@ class LogEventConsumerTest {
     }
 
     @Test
+    void sendsANullLogEventToTheDeadLetterTopic() throws Exception {
+        kafkaTemplate.send(topic, "null-event", "null").get(10, TimeUnit.SECONDS);
+
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+            assertThat(deadLetterValues()).contains("null");
+            assertThat(repository.count()).isZero();
+        });
+    }
+
+    @Test
     void sendsAMalformedLogEventToTheDeadLetterTopic() throws Exception {
         String payload = "not-json-" + UUID.randomUUID();
 

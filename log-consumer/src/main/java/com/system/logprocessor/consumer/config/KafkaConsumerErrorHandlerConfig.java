@@ -5,6 +5,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -43,7 +44,8 @@ public class KafkaConsumerErrorHandlerConfig {
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
         errorHandler.addNotRetryableExceptions(
                 JsonProcessingException.class,
-                InvalidLogEventException.class);
+                InvalidLogEventException.class,
+                DataIntegrityViolationException.class);
         return errorHandler;
     }
 }

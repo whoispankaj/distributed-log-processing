@@ -56,7 +56,11 @@ public class LogEventConsumer {
 
     private LogEvent readLogEvent(String message) {
         try {
-            return objectMapper.readValue(message, LogEvent.class);
+            LogEvent logEvent = objectMapper.readValue(message, LogEvent.class);
+            if (logEvent == null) {
+                throw rejected("invalid", "Log event payload is null", null);
+            }
+            return logEvent;
         } catch (JsonProcessingException exception) {
             throw rejected("malformed", "Log event payload is not valid JSON", exception);
         }

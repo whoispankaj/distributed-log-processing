@@ -52,6 +52,7 @@ public class LogEventController {
 
     private void validate(LogEventRequest request) {
         List<String> problems = new ArrayList<>();
+        checkLength(problems, "id", request.id());
         checkRequired(problems, "organizationId", request.organizationId());
         checkLevel(problems, request.level());
         checkRequired(problems, "message", request.message());
@@ -87,6 +88,9 @@ public class LogEventController {
 
     private LogEvent toEvent(LogEventRequest request) {
         LogEvent event = new LogEvent();
+        if (!isBlank(request.id())) {
+            event.setId(request.id());
+        }
         event.setOrganizationId(request.organizationId());
         event.setLevel(request.level());
         event.setMessage(request.message());

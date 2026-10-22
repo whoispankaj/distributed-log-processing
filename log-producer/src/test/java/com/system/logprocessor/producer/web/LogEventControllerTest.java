@@ -9,6 +9,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -60,5 +61,16 @@ class LogEventControllerTest {
                                 {"organizationId":"org-1","level":"INFO","message":"hello","source":"test"}
                                 """))
                 .andExpect(status().isAccepted());
+    }
+
+    @Test
+    void usesAClientSuppliedId() throws Exception {
+        mockMvc.perform(post("/logs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":"client-evt-1","organizationId":"org-1","level":"INFO","message":"hello"}
+                                """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value("client-evt-1"));
     }
 }

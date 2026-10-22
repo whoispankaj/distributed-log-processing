@@ -16,6 +16,7 @@ spring:
       enable-auto-commit: false
     listener:
       ack-mode: manual-immediate
+      concurrency: ${log.events.partitions}
   
   datasource:
     url: jdbc:postgresql://localhost:5433/${POSTGRES_DB:logprocessor}

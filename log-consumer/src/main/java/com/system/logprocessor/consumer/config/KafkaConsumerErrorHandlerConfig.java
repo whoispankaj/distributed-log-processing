@@ -87,12 +87,6 @@ public class KafkaConsumerErrorHandlerConfig {
             return false;
         }
         String state = sql.getSQLState();
-        if (state != null && (state.startsWith("08") || "57P01".equals(state))) {
-            return true;
-        }
-        String message = sql.getMessage();
-        return message != null && (message.contains("Connection is closed")
-                || message.contains("Connection refused")
-                || message.contains("terminating connection"));
+        return state != null && (state.startsWith("08") || "57P01".equals(state));
     }
 }

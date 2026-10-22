@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,9 +105,38 @@ public class LogEventController {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Interrupted while publishing log event", exception);
-        } catch (TimeoutException | ExecutionException exception) {
+        } catch (TimeoutException exception) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Could not publish log event", exception);
+        } catch (ExecutionException exception) {
+            throw publishFailure(exception);
+        } catch (RuntimeException exception) {
+            if (hasCause(exception, RecordTooLargeException.class)) {
+                throw tooLarge(exception);
+            }
+            throw exception;
         }
+    }
+
+    private ResponseStatusException publishFailure(ExecutionException exception) {
+        if (hasCause(exception, RecordTooLargeException.class)) {
+            return tooLarge(exception);
+        }
+        return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Could not publish log event", exception);
+    }
+
+    private static ResponseStatusException tooLarge(Exception exception) {
+        return new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Log event is too large to publish", exception);
+    }
+
+    private static boolean hasCause(Throwable exception, Class<? extends Throwable> type) {
+        Throwable current = exception;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private static boolean isBlank(String value) {

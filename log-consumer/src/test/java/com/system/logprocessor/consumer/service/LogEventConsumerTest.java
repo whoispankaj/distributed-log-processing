@@ -147,6 +147,21 @@ class LogEventConsumerTest {
     }
 
     @Test
+    void sendsAnOverlongOrganizationIdToTheDeadLetterTopic() throws Exception {
+        String id = "evt-" + UUID.randomUUID();
+        String payload = """
+                {"id":"%s","organizationId":"%s","level":"INFO","message":"hello","timestamp":"2026-10-22T04:00:00Z"}
+                """.formatted(id, "x".repeat(256)).strip();
+
+        kafkaTemplate.send(topic, "too-long", payload).get(10, TimeUnit.SECONDS);
+
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+            assertThat(deadLetterValues()).contains(payload);
+            assertThat(repository.findById(id)).isEmpty();
+        });
+    }
+
+    @Test
     void sendsAMalformedLogEventToTheDeadLetterTopic() throws Exception {
         String payload = "not-json-" + UUID.randomUUID();
         int partition = 2;

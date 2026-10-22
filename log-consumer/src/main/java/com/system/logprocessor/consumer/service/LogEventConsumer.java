@@ -86,6 +86,19 @@ public class LogEventConsumer {
         if (!missing.isEmpty()) {
             throw rejected("invalid", "Log event is missing required fields: " + missing, null);
         }
+        List<String> tooLong = new ArrayList<>();
+        if (isTooLong(logEvent.getOrganizationId())) {
+            tooLong.add("organizationId");
+        }
+        if (isTooLong(logEvent.getLevel())) {
+            tooLong.add("level");
+        }
+        if (isTooLong(logEvent.getSource())) {
+            tooLong.add("source");
+        }
+        if (!tooLong.isEmpty()) {
+            throw rejected("invalid", "Log event fields exceed 255 characters: " + tooLong, null);
+        }
     }
 
     private InvalidLogEventException rejected(String reason, String detail, Exception cause) {
@@ -100,5 +113,9 @@ public class LogEventConsumer {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private static boolean isTooLong(String value) {
+        return value != null && value.length() > 255;
     }
 }

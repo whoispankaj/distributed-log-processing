@@ -64,6 +64,17 @@ class LogEventControllerTest {
     }
 
     @Test
+    void acceptsALowercaseLevel() throws Exception {
+        mockMvc.perform(post("/logs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"organizationId":"org-1","level":"info","message":"hello"}
+                                """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.level").value("INFO"));
+    }
+
+    @Test
     void usesAClientSuppliedId() throws Exception {
         mockMvc.perform(post("/logs")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -2,6 +2,7 @@ package com.system.logprocessor.producer.web;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -71,13 +72,16 @@ public class LogEventController {
     }
 
     private static void checkLevel(List<String> problems, String level) {
-        if (isBlank(level)) {
+        String normalized = normalizeLevel(level);
+        if (isBlank(normalized)) {
             problems.add("level is required");
-        } else if (!LEVELS.contains(level)) {
+        } else if (!LEVELS.contains(normalized)) {
             problems.add("level must be one of TRACE, DEBUG, INFO, WARN, ERROR, FATAL");
-        } else {
-            checkLength(problems, "level", level);
         }
+    }
+
+    private static String normalizeLevel(String level) {
+        return level == null ? null : level.trim().toUpperCase(Locale.ROOT);
     }
 
     private static void checkLength(List<String> problems, String name, String value) {
@@ -92,7 +96,7 @@ public class LogEventController {
             event.setId(request.id());
         }
         event.setOrganizationId(request.organizationId());
-        event.setLevel(request.level());
+        event.setLevel(normalizeLevel(request.level()));
         event.setMessage(request.message());
         event.setSource(request.source());
         event.setTimestamp(request.timestamp());

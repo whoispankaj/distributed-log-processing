@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
@@ -23,14 +22,18 @@ public class LogEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(LogEventConsumer.class);
 
-    @Autowired
-    private LogEventRepository logEventRepository;
+    private final LogEventRepository logEventRepository;
+    private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private MeterRegistry meterRegistry;
+    public LogEventConsumer(
+            LogEventRepository logEventRepository,
+            ObjectMapper objectMapper,
+            MeterRegistry meterRegistry) {
+        this.logEventRepository = logEventRepository;
+        this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
+    }
 
     @KafkaListener(topics = "${log.events.topic}", groupId = "${log.events.group-id}")
     public void consumeLogEvent(String message, Acknowledgment acknowledgment) {

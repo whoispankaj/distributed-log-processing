@@ -38,15 +38,6 @@ spring:
       port: 6379
       timeout: 2000ms
 
-# Circuit breaker configuration
-resilience4j:
-  circuitbreaker:
-    instances:
-      database:
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        sliding-window-size: 10
-
 # Actuator endpoints
 management:
   endpoints:

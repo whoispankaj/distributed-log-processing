@@ -39,10 +39,14 @@ public class KafkaConsumerErrorHandlerConfig {
     }
 
     @Bean
-    public DefaultErrorHandler kafkaConsumerErrorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
+    public DefaultErrorHandler kafkaConsumerErrorHandler(
+            KafkaTemplate<Object, Object> kafkaTemplate,
+            @Value("${log.events.partitions}") int deadLetterPartitions) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
-                (record, exception) -> new TopicPartition(record.topic() + DEAD_LETTER_SUFFIX, record.partition()));
+                (record, exception) -> new TopicPartition(
+                        record.topic() + DEAD_LETTER_SUFFIX,
+                        deadLetterPartition(record.partition(), deadLetterPartitions)));
 
         ExponentialBackOff backOff = new ExponentialBackOff(1_000L, 2.0);
         backOff.setMaxInterval(10_000L);
@@ -57,6 +61,10 @@ public class KafkaConsumerErrorHandlerConfig {
                 InvalidLogEventException.class,
                 DataIntegrityViolationException.class);
         return errorHandler;
+    }
+
+    static int deadLetterPartition(int sourcePartition, int deadLetterPartitions) {
+        return sourcePartition < deadLetterPartitions ? sourcePartition : -1;
     }
 
     private static boolean isTransient(Throwable exception) {

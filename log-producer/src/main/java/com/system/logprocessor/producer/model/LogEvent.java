@@ -1,6 +1,6 @@
 package com.system.logprocessor.producer.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class LogEvent {
@@ -9,10 +9,9 @@ public class LogEvent {
     private String level;
     private String message;
     private String source;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
     public LogEvent() {
-        this.timestamp = LocalDateTime.now();
         this.id = UUID.randomUUID().toString();
     }
     
@@ -36,7 +35,7 @@ public class LogEvent {
         return source;
     }
     
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
@@ -60,8 +59,14 @@ public class LogEvent {
         this.source = source;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public void assignTimestampIfMissing() {
+        if (this.timestamp == null) {
+            this.timestamp = Instant.now();
+        }
     }
 
     @Override

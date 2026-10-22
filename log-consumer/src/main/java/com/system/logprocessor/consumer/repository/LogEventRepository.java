@@ -1,6 +1,6 @@
 package com.system.logprocessor.consumer.repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -27,6 +27,6 @@ public interface LogEventRepository extends JpaRepository<LogEvent, String> {
             @Param("level") String level,
             @Param("message") String message,
             @Param("source") String source,
-            @Param("timestamp") LocalDateTime timestamp,
-            @Param("processedAt") LocalDateTime processedAt);
+            @Param("timestamp") Instant timestamp,
+            @Param("processedAt") Instant processedAt);
 }

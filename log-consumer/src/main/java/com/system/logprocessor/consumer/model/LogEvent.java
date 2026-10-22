@@ -1,7 +1,7 @@
 package com.system.logprocessor.consumer.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "log_events")
@@ -22,11 +22,11 @@ public class LogEvent {
     @Column(name = "source")
     private String source;
     
-    @Column(name = "timestamp", nullable = false)
-    private LocalDateTime timestamp;
+    @Column(name = "timestamp", nullable = false, columnDefinition = "timestamptz")
+    private Instant timestamp;
     
-    @Column(name = "processed_at")
-    private LocalDateTime processedAt;
+    @Column(name = "processed_at", columnDefinition = "timestamptz")
+    private Instant processedAt;
 
     public LogEvent() {}
 
@@ -46,9 +46,9 @@ public class LogEvent {
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Instant getTimestamp() { return timestamp; }
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
 
-    public LocalDateTime getProcessedAt() { return processedAt; }
-    public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
+    public Instant getProcessedAt() { return processedAt; }
+    public void setProcessedAt(Instant processedAt) { this.processedAt = processedAt; }
 }

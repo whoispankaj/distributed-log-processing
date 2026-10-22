@@ -1,6 +1,6 @@
 package com.system.logprocessor.consumer.service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class LogEventConsumer {
     public void consumeLogEvent(String message, Acknowledgment acknowledgment) {
         LogEvent logEvent = readLogEvent(message);
         validate(logEvent);
-        logEvent.setProcessedAt(LocalDateTime.now());
+        logEvent.setProcessedAt(Instant.now());
         int inserted = logEventRepository.insertIfAbsent(
                 logEvent.getId(),
                 logEvent.getOrganizationId(),
